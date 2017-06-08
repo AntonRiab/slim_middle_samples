@@ -49,7 +49,7 @@ ${POSTGRES_DB}/import:
 	mkdir ${POSTGRES_DB}/import
 	chmod 777 ${POSTGRES_DB}/import
 
-install_db:
+install_db: .COPY
 	sudo -u postgres psql -f 0.init.psql && \
         psql -U testuser -d testdb -h 127.0.0.1 \
 		-f 1.import.export.sql \
@@ -69,7 +69,8 @@ jl.config: ngx_execute
 ####</Nginx configuration start>
 ####<Show>
 import_export_show: ngx_execute ie.config
-	@sudo -u postgres psql -c "TRUNCATE TABLE simple_data;"
+	@echo "Current_dir $(CDIR)"
+	@sudo -u postgres psql -d testdb -c "TRUNCATE TABLE simple_data;"
 	@echo
 	@echo "PUT CSV*****************************************************************"
 	curl -f -X PUT -T simple_data/data.csv http://127.0.0.1:8880/csv/simple_data

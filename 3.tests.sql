@@ -97,7 +97,7 @@ TRUNCATE TABLE rst_data;
 ALTER SEQUENCE jrl_data_s_id_seq RESTART WITH 1;
 ALTER SEQUENCE rst_data_s_id_seq RESTART WITH 1;
 
-INSERT INTO jrl_data (data0) VALUES ('first', 'one');
+INSERT INTO jrl_data (data0, data1) VALUES ('first', 'one');
 INSERT INTO jrl_data (p_trid, data1) VALUES ((SELECT s_id FROM rst_data limit 1), 'second');
 INSERT INTO jrl_data (p_trid, data1) VALUES ('1000000', 'million');
 --SELECT * FROM rst_data;
