@@ -101,17 +101,17 @@ Then you need to build nginx with ngx_pgcopy and `make install_db`.
 
 Lazy mode
 ---------------
-You can use `make likeiamlazy`, to download nginx+ngx_pgcopy, build it and to run from local directory and it install sql sript.  
+You can use `make likeiamlazy`, to download nginx+ngx_pgcopy, build it and to run from local directory and it install sql script.  
 After you can use `make show` to look at demo work. Or part of this `import_export_show`, `filter_show` and `journal_log_show`.
 
-**Resolve some difficult with starts:** It you tried to `make show` with nginx without ngx pgcopy, you need to remove ngx execute in current project directory.
+**Resolve some difficult with starts:** It you tried to `make show` with nginx without ngx pgcopy, you need to remove ngx_execute in current project directory.
 
 Attention
 ---------------
-`make install_db` install database with name `testdb` and user `testuser` with password `123`.  
+`make install_db`(it calls from lazy mode) install database with name `testdb` and user `testuser` with password `123`.  
 `make cleanall` remove this databse and the user.
 
-PostgreSQL need base in `/var/lib/postgresql/9.6/main`.
+PostgreSQL need base in `/var/lib/postgresql/9.6/main`.  
 `make install_db` will create directory `import` inside it.
 
 License
