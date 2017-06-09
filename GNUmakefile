@@ -73,9 +73,16 @@ jl.config: ngx_execute
 	@killall -9 ngx_execute; ./ngx_execute -c ${CDIR}/journal.log.nginx.conf
 ####</Nginx configuration start>
 ####<Show>
+show_begin:
+	@echo "***********************************************************************"
+	@echo
+	@echo "                           SHOW BEGIN                                  "
+	@echo 
+	@echo "***********************************************************************"
+
 import_export_show: ngx_execute ie.config
 	@echo "Current_dir $(CDIR)"
-	@sudo -u postgres psql -d testdb -c "TRUNCATE TABLE simple_data;"
+	sudo -u postgres psql -d testdb -c "TRUNCATE TABLE simple_data;"
 	@echo
 	@echo "PUT CSV*****************************************************************"
 	curl -f -X PUT -T simple_data/data.csv http://127.0.0.1:8880/csv/simple_data
@@ -102,18 +109,19 @@ filter_show: ngx_execute f.config
 	curl http://127.0.0.1:8880/t/simple_data/*?s_id=1
 
 journal_log_show: ngx_execute jl.config
+	@echo "prepare journal and log..."
 	@sudo -u postgres psql -d testdb -f clean.journal_log.sql
 	@echo "JOURNAL PUT 0***********************************************************"
 	curl -f -X PUT -T jornal_log_data/journal.0.data http://127.0.0.1:8880/journal
 	@cat jornal_log_data/journal.0.data
 	@echo
-	@echo "JOURNAL GET*************************************************************"
+	@echo "JOURNAL GET 0***********************************************************"
 	curl http://127.0.0.1:8880/journal
 	@echo "JOURNAL PUT 1***********************************************************"
 	curl -f -X PUT -T jornal_log_data/journal.1.data http://127.0.0.1:8880/journal
 	@cat jornal_log_data/journal.1.data
 	@echo
-	@echo "JOURNAL GET*************************************************************"
+	@echo "JOURNAL GET 1***********************************************************"
 	curl http://127.0.0.1:8880/journal
 	@echo
 	@echo "LOG PUT 0***************************************************************"
@@ -130,7 +138,12 @@ journal_log_show: ngx_execute jl.config
 	curl http://127.0.0.1:8880/log
 	@echo
 
-show: import_export_show filter_show journal_log_show
+show: show_begin import_export_show filter_show journal_log_show
+	@echo "***********************************************************************"
+	@echo
+	@echo "                           SHOW COMPLITE                               "
+	@echo 
+	@echo "***********************************************************************"
 ####</Show>
 likeiamlazy: nginx/objs/nginx install_db ngx_execute
 
