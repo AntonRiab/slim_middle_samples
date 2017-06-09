@@ -95,7 +95,9 @@ How to look at it and install
 You nedd to install 
 - postgresql-9.6
 - postgresql-contrib-9.6
-- pcre 8.3*
+- pcre 8.3* develop version
+- libpq develop version
+- curl for show and tests
 
 Then you need to build nginx with ngx_pgcopy and `make install_db`.
 

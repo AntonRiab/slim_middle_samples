@@ -19,11 +19,16 @@ all: nginx_install ${POSTGRES_DB}/import install_db
 	chmod -R 777 /var/lib/postgresql/9.6/main/import
 
 ####<Nginx install>
-nginx/Makefile:
-	@if [ -z ${PREFIX_CONF} ];then echo "Unknown system, use FreeBSD or Linux!" && exit 2; fi
+nginx/auto/configure:
 	git clone -q https://github.com/nginx/nginx nginx
+
+nginx/ngx_pgcopy/config:
 	git clone -q http://github.com/AntonRiab/ngx_pgcopy nginx/ngx_pgcopy
+
+nginx/Makefile: nginx/auto/configure nginx/ngx_pgcopy/config
+	@if [ -z ${PREFIX_CONF} ];then echo "Unknown system, use FreeBSD or Linux!" && exit 2; fi
 	cd nginx && auto/configure "${PREFIX_CONF}" \
+				"--without-http_gzip_module" \
                                 "--add-module=${CDIR}/nginx/ngx_pgcopy" \
                                 "--pid-path=/var/run/nginx.pid" \
                                 "--error-log-path=/var/log/nginx-error.log" \
