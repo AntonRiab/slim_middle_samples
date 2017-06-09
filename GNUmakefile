@@ -56,7 +56,7 @@ ${POSTGRES_DB}/import:
 
 install_db: .COPY
 	sudo -u postgres psql -f 0.init.psql && \
-        psql -U testuser -d testdb -h 127.0.0.1 \
+	PGPASSWORD='123' psql -U testuser -d testdb -h 127.0.0.1 -c "CREATE extension hstore;" \
 		-f 1.import.export.sql \
 		-f 2.jrl.log.sql \
 		-f 3.tests.sql

@@ -3,6 +3,3 @@ CREATE database testdb;
 GRANT all ON database testdb TO testuser;
 ALTER USER testuser WITH SUPERUSER; --need for use pg_read_binary_file
 
-\c testdb testuser 127.0.0.1
-CREATE extension hstore;
-
