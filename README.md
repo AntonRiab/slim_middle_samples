@@ -2,7 +2,7 @@ About
 ===============
 It's samples how to make server side of absolute web app with stack on nginx->ngx_pgcopy->postgresql without any other extendeds. Without FastCGI, *CGI infrastructure and others. Like php, node.js, perl, ruby and other...  
 
-A long time ago in a galaxy far, far away...When browsers was not have full featured JavaScript and database engine was not supports user defined functions all developers used fat middle. But currently, time is changed and we need to change.
+A long time ago in a galaxy far, far away...When browsers was not has full featured JavaScript and database engine was not supports user defined functions all developers used fat middle. But currently, time is changed and we need to change.
 ![](Evolution_of_middles.gif)
 
 Why it can be interesting for you. And where it is perspective?
@@ -42,7 +42,7 @@ import.export.nginx.conf
 ---------------
 Current samples contains how to use PostgreSQL build-in functions to work with the nginx file buffer to direct put and get your data to/from database.  
 
-With next work urls
+With next urls
 
         http://127.0.0.1:8880/csv/simple_data
         http://127.0.0.1:8880/json/simple_data
@@ -56,16 +56,16 @@ And how to direct output data in the formats.
 filters.nginx.conf
 ---------------
 It's contains how to construct filters  
-With next work urls like
+With next urls like
 
         http://127.0.0.1:8880/t/simple_data/*?s_id=1
 
-In current time nginx does not support sed syntax with modificator `g` like `sed s/good/bad/g`  
+In current time nginx does not supports sed syntax with modificator `g` like `sed s/good/bad/g`  
 So, we gеt some monstrous construction in sample configuration. But it's worked.
 
 Logic point enter of data
 ===============
-PostgreSQL COPY request does not support direct calls storage function(only with nested `SELECT`).  
+PostgreSQL COPY request does not supports direct calls storage function(only with nested `SELECT`).  
 I offer to use trigger with some enter tables. Journal pair tables or one Logic table.  
 Per one data type collection(structure type) for one(two if journal) table.
 
@@ -103,17 +103,17 @@ Then you need to build nginx with ngx_pgcopy and `make install_db`.
 
 Lazy mode
 ---------------
-You can use `make likeiamlazy`, to download nginx+ngx_pgcopy, build it and to run from local directory and it install sql script.  
+You can use `make likeiamlazy`, to download nginx+ngx_pgcopy, build it and to run from local directory and it will installed sql script.  
 After you can use `make show` to look at demo work. Or part of this `import_export_show`, `filter_show` and `journal_log_show`.
 
 **Resolve some difficult with starts:** It you tried to `make show` with nginx without ngx pgcopy, you need to remove ngx_execute in current project directory.
 
 Attention
 ---------------
-`make install_db`(it calls from lazy mode) install database with name `testdb` and user `testuser` with password `123`.  
-`make cleanall` remove this databse and the user.
+`make install_db`(it calls from lazy mode) installs database with name `testdb` and user `testuser` with password `123`.  
+`make cleanall` removes this database and the user.
 
-PostgreSQL need base in `/var/lib/postgresql/9.6/main`.  
+PostgreSQL needs base in `/var/lib/postgresql/9.6/main`.  
 `make install_db` will create directory `import` inside it.
 
 License
