@@ -1,0 +1,4 @@
+
+WHERE s_id='1'
+WHERE s_id='1' AND data0='one'
+WHERE s_id='1'
