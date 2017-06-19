@@ -6,10 +6,21 @@ CSYS:=$(shell uname)
 ifeq ($(CSYS),FreeBSD)
     PREFIX_CONF="--prefix=/usr/local/ --conf-path=$/usr/local/etc/nginx/nginx.conf"
 else ifeq ($(CSYS),Linux)
-    PREFIX_CONF="--prefix=/ --conf-path=/etc/nginx/nginx.conf"
+    PREFIX_CONF="--prefix= --conf-path=/etc/nginx/nginx.conf"
 endif
 
 MAKEFLAGS += --jobs=1
+
+define JL_CLEAN
+TRUNCATE TABLE jrl_data;
+TRUNCATE TABLE rst_data;
+ALTER SEQUENCE jrl_data_s_id_seq RESTART WITH 1;
+ALTER SEQUENCE rst_data_s_id_seq RESTART WITH 1;
+
+TRUNCATE TABLE log_data;
+ALTER SEQUENCE log_data_s_id_seq RESTART WITH 1;
+endef
+export JL_CLEAN
 
 all: nginx_install ${POSTGRES_DB}/import install_db
 
@@ -18,7 +29,7 @@ all: nginx_install ${POSTGRES_DB}/import install_db
 	cp simple_data/* /var/lib/postgresql/9.6/main/import/
 	chmod -R 777 /var/lib/postgresql/9.6/main/import
 
-####<Nginx install>
+####<Nginx search and build>
 nginx/auto/configure:
 	git clone -q https://github.com/nginx/nginx nginx
 
@@ -44,33 +55,68 @@ nginx_install: nginx/objs/nginx
 
 ngx_execute:
 	@echo "Search nginx executive file..."
-	@if [ -s ./nginx/objs/nginx ];then ln -s ./nginx/objs/nginx ./ngx_execute; \
-	 elif [ test -s /usr/local/sbin/nginx ];then ln -s /usr/local/sbin/nginx ./ngx_execute; \
-         elif [ test -s /sbin/nginx ];then ln -s /sbin/nginx ./ngx_execute; fi
+	@if [ -s ./nginx/objs/nginx -a -n $(./nginx/objs/nginx -V | grep ngx_pgcopy) ];then ln -s ./nginx/objs/nginx ./ngx_execute; \
+	 elif [ -s /usr/local/sbin/nginx -a -n $(/usr/local/sbin/nginx -V | grep ngx_pgcopy) ];then ln -s /usr/local/sbin/nginx ./ngx_execute; \
+         elif [ -s /sbin/nginx -a -n $(/sbin/nginx -V | grep ngx_pgcopy) ];then ln -s /sbin/nginx ./ngx_execute; \
+	 else echo "Error, no nginx with ngx_pgcopy, exit"; fi
 
-####</Nginx install>
+nginx_clean:
+	cd nginx && make clean
+
+nginx/lua-nginx-module/config:
+	git clone -q "https://github.com/openresty/lua-nginx-module" nginx/lua-nginx-module
+
+nginx/ngx_devel_kit/config:
+	git clone -q "https://github.com/simpl/ngx_devel_kit" nginx/ngx_devel_kit
+
+ngx_execute_lua: nginx/auto/configure nginx/lua-nginx-module/config nginx/ngx_devel_kit/config nginx/ngx_pgcopy/config
+	@echo "Build nginx with lua"
+	export LUAJIT_LIB=/usr/lib/x86_64-linux-gnu
+	export LUAJIT_INC=/usr/include/luajit-2.0
+	cd nginx && auto/configure "${PREFIX_CONF}" \
+				"--without-http_gzip_module" \
+                                "--add-module=${CDIR}/nginx/ngx_pgcopy" \
+                                "--pid-path=/var/run/nginx.pid" \
+                                "--error-log-path=/var/log/nginx-error.log" \
+                                "--http-log-path=/var/log/nginx-access.log" \
+				"--with-ld-opt=-Wl,-rpath,/usr/lib/x86_64-linux-gnu" \
+				"--add-module=${CDIR}/nginx/ngx_devel_kit" \
+				"--add-module=${CDIR}/nginx/lua-nginx-module" \
+				"--modules-path=${CDIR}/nginx/tmp" \
+				"--http-client-body-temp-path=/tmp/http-client-body-temp-path" \
+				"--without-http_fastcgi_module" \
+				"--without-http_proxy_module" \
+				"--without-http_uwsgi_module" \
+				"--without-http_scgi_module" \
+	&& make && cp ${CDIR}/nginx/objs/nginx ${CDIR}/ngx_execute_lua
+
+####</Nginx search and build>
 ####<Configure DataBase>
 ${POSTGRES_DB}/import:
 	mkdir ${POSTGRES_DB}/import
 	chmod 777 ${POSTGRES_DB}/import
 
 install_db: .COPY
-	sudo -u postgres psql -f 0.init.psql && \
+	sudo -u postgres psql -f ${CDIR}/sql/0.init.psql && \
 	PGPASSWORD='123' psql -U testuser -d testdb -h 127.0.0.1 -c "CREATE extension hstore;" \
-		-f 1.import.export.sql \
-		-f 2.jrl.log.sql \
-		-f 3.tests.sql
+		-f ${CDIR}/sql/1.import.export.sql \
+		-f ${CDIR}/sql/2.jrl.log.sql \
+		-f ${CDIR}/sql/3.tests.sql
 
 ####</Configure DataBase>
 ####<Nginx configuration start>
 ie.config: ngx_execute
-	@killall -9 ngx_execute; ./ngx_execute -c ${CDIR}/import.export.nginx.conf
+	@killall -9 ngx_execute; ./ngx_execute -c ${CDIR}/nginx.conf/import.export.nginx.conf
 
 f.config: ngx_execute
-	@killall -9 ngx_execute; ./ngx_execute -c ${CDIR}/filters.nginx.conf
+	@killall -9 ngx_execute; ./ngx_execute -c ${CDIR}/nginx.conf/filters.nginx.conf
 
 jl.config: ngx_execute
-	@killall -9 ngx_execute; ./ngx_execute -c ${CDIR}/journal.log.nginx.conf
+	@killall -9 ngx_execute; ./ngx_execute -c ${CDIR}/nginx.conf/journal.log.nginx.conf
+
+lua.config: ngx_execute_lua
+	@killall -9 ngx_execute ; killall -9 ngx_execute_lua 2> /dev/null
+	./ngx_execute_lua -c ${CDIR}/nginx.conf/lua.filters.nginx.conf
 ####</Nginx configuration start>
 ####<Show>
 show_begin:
@@ -109,8 +155,9 @@ filter_show: ngx_execute f.config
 	curl http://127.0.0.1:8880/t/simple_data/*?s_id=1
 
 journal_log_show: ngx_execute jl.config
-	@echo "prepare journal and log..."
-	@sudo -u postgres psql -d testdb -f clean.journal_log.sql
+	@echo "***********************************************************************"
+	@echo "Prepare journal and log..."
+	@echo "$$JL_CLEAN" | PGPASSWORD='123' psql -U testuser -d testdb -h 127.0.0.1 -f - > /dev/null
 	@echo "JOURNAL PUT 0***********************************************************"
 	curl -f -X PUT -T jornal_log_data/journal.0.data http://127.0.0.1:8880/journal
 	@cat jornal_log_data/journal.0.data

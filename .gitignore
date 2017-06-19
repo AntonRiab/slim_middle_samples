@@ -1,12 +1,8 @@
-postgresql-9.3.12/
-ngx_pgcopy/
 nginx/
 tmp/
 status/
-tempinstall/
-tempinstall*
 nginx_pgcopy.deb
 
-/postgresql-*
 *~
 ngx_execute
+ngx_execute_lua

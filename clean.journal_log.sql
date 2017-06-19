@@ -1,7 +1,0 @@
-TRUNCATE TABLE jrl_data;
-TRUNCATE TABLE rst_data;
-ALTER SEQUENCE jrl_data_s_id_seq RESTART WITH 1;
-ALTER SEQUENCE rst_data_s_id_seq RESTART WITH 1;
-
-TRUNCATE TABLE log_data;
-ALTER SEQUENCE log_data_s_id_seq RESTART WITH 1;
