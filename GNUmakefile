@@ -1,4 +1,5 @@
 POSTGRES_DB=/var/lib/postgresql/9.6/main
+OTHER_PARAM:="--with-debug"
 
 CDIR:=$(shell pwd)
 
@@ -23,7 +24,6 @@ endef
 export JL_CLEAN
 
 all: nginx_install ${POSTGRES_DB}/import install_db
-
 
 .COPY: /var/lib/postgresql/9.6/main/import
 	cp simple_data/* /var/lib/postgresql/9.6/main/import/
@@ -90,6 +90,29 @@ ngx_execute_lua: nginx/auto/configure nginx/lua-nginx-module/config nginx/ngx_de
 				"--without-http_scgi_module" \
 	&& make && cp ${CDIR}/nginx/objs/nginx ${CDIR}/ngx_execute_lua
 
+nginx/njs/nginx/config:
+	hg clone http://hg.nginx.org/njs nginx/njs
+
+ngx_execute_njs: nginx/njs/nginx/config
+	cd nginx && auto/configure "--prefix= --conf-path=${CDIR}/nginx.conf/nginx.conf" \
+                                "--add-module=${CDIR}/nginx/ngx_pgcopy" \
+                                "--pid-path=/var/run/nginx.pid" \
+                                "--error-log-path=/var/log/nginx-error.log" \
+                                "--http-log-path=/var/log/nginx-access.log" \
+				"--modules-path=${CDIR}/nginx/tmp" \
+				"--http-client-body-temp-path=/tmp/http-client-body-temp-path" \
+				"--without-http_fastcgi_module" \
+				"--without-http_proxy_module" \
+				"--without-http_uwsgi_module" \
+				"--without-http_scgi_module" \
+				"--with-pcre-jit" \
+				"--with-http_v2_module" \
+				"--with-ipv6" \
+				"--with-http_gzip_static_module" \
+				"--with-http_ssl_module" \
+				"--add-module=${CDIR}/nginx/njs/nginx" "${OTHER_PARAM}"\
+	&& make && cp ${CDIR}/nginx/objs/nginx ${CDIR}/ngx_execute_njs
+
 ####</Nginx search and build>
 ####<Configure DataBase>
 ${POSTGRES_DB}/import:
@@ -105,18 +128,25 @@ install_db: .COPY
 
 ####</Configure DataBase>
 ####<Nginx configuration start>
-ie.config: ngx_execute
-	@killall -9 ngx_execute; ./ngx_execute -c ${CDIR}/nginx.conf/import.export.nginx.conf
+####netstat -lp -o pid,port | awk '/:8880/{print $7};
+nginx_kill:
+	killall -9 ngx_execute_njs 2> /dev/null; killall -9 ngx_execute_lua 2> /dev/null; killall -9 ngx_execute 2> /dev/null; return 0
 
-f.config: ngx_execute
-	@killall -9 ngx_execute; ./ngx_execute -c ${CDIR}/nginx.conf/filters.nginx.conf
+ie.config: ngx_execute nginx_kill
+	./ngx_execute -c ${CDIR}/nginx.conf/import.export.nginx.conf
 
-jl.config: ngx_execute
-	@killall -9 ngx_execute; ./ngx_execute -c ${CDIR}/nginx.conf/journal.log.nginx.conf
+f.config: ngx_execute nginx_kill
+	./ngx_execute -c ${CDIR}/nginx.conf/filters.nginx.conf
 
-lua.config: ngx_execute_lua
-	@killall -9 ngx_execute ; killall -9 ngx_execute_lua 2> /dev/null
+jl.config: ngx_execute nginx_kill
+	./ngx_execute -c ${CDIR}/nginx.conf/journal.log.nginx.conf
+
+lua.config: ngx_execute_lua nginx_kill	
 	./ngx_execute_lua -c ${CDIR}/nginx.conf/lua.filters.nginx.conf
+
+njs.config: ngx_execute_njs nginx_kill
+	./ngx_execute_njs -c ${CDIR}/nginx.conf/njs.filters.nginx.conf
+
 ####</Nginx configuration start>
 ####<Show>
 show_begin:
@@ -200,5 +230,5 @@ cleandb:
 
 cleanall: cleandb
 	rm -r ${POSTGRES_DB}/import
-	rm ngx_execute
+	rm ngx_execute ngx_execute_njs
 	rm -r nginx
