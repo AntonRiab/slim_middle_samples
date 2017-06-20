@@ -106,10 +106,6 @@ ngx_execute_njs: nginx/njs/nginx/config
 				"--without-http_uwsgi_module" \
 				"--without-http_scgi_module" \
 				"--with-pcre-jit" \
-				"--with-http_v2_module" \
-				"--with-ipv6" \
-				"--with-http_gzip_static_module" \
-				"--with-http_ssl_module" \
 				"--add-module=${CDIR}/nginx/njs/nginx" "${OTHER_PARAM}"\
 	&& make && cp ${CDIR}/nginx/objs/nginx ${CDIR}/ngx_execute_njs
 
@@ -130,21 +126,28 @@ install_db: .COPY
 ####<Nginx configuration start>
 ####netstat -lp -o pid,port | awk '/:8880/{print $7};
 nginx_kill:
-	killall -9 ngx_execute_njs 2> /dev/null; killall -9 ngx_execute_lua 2> /dev/null; killall -9 ngx_execute 2> /dev/null; return 0
+	killall -9 ngx_execute 2> /dev/null; exit 0
+	killall -9 ngx_execute_njs 2> /dev/null; exit 0
+	killall -9 ngx_execute_lua 2> /dev/null; exit 0
 
-ie.config: ngx_execute nginx_kill
+ie.config: ngx_execute
+	make nginx_kill
 	./ngx_execute -c ${CDIR}/nginx.conf/import.export.nginx.conf
 
-f.config: ngx_execute nginx_kill
+f.config: ngx_execute
+	make nginx_kill
 	./ngx_execute -c ${CDIR}/nginx.conf/filters.nginx.conf
 
-jl.config: ngx_execute nginx_kill
+jl.config: ngx_execute
+	make nginx_kill
 	./ngx_execute -c ${CDIR}/nginx.conf/journal.log.nginx.conf
 
-lua.config: ngx_execute_lua nginx_kill	
+lua.config: ngx_execute_lua
+	make nginx_kill
 	./ngx_execute_lua -c ${CDIR}/nginx.conf/lua.filters.nginx.conf
 
-njs.config: ngx_execute_njs nginx_kill
+njs.config: ngx_execute_njs 
+	make nginx_kill
 	./ngx_execute_njs -c ${CDIR}/nginx.conf/njs.filters.nginx.conf
 
 ####</Nginx configuration start>
@@ -229,6 +232,6 @@ cleandb:
 	sudo -u postgres psql -c 'DROP USER IF EXISTS testuser;'
 
 cleanall: cleandb
+	rm -r nginx
 	rm -r ${POSTGRES_DB}/import
 	rm ngx_execute ngx_execute_njs
-	rm -r nginx

@@ -6,3 +6,4 @@ nginx_pgcopy.deb
 *~
 ngx_execute
 ngx_execute_lua
+ngx_execute_njs
