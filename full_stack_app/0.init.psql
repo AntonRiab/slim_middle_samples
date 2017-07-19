@@ -1,0 +1,4 @@
+CREATE user "testuser" with password '123';
+CREATE database testdb;
+GRANT all ON database testdb TO testuser;
+ALTER USER testuser WITH SUPERUSER; --need for use pg_read_binary_file

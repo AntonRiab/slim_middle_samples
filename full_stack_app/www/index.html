@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<script src="knockout-3.4.2.js"></script>
+<script src="jquery-3.2.1.min.js"></script>
+</head>
+<body>
+    <h3>Tasks</h3>
+
+    <form data-bind="submit: addTask">
+        Add task: <input data-bind="value: newTaskText" placeholder="What needs to be done?" />
+        <button type="submit">Add</button>
+    </form>
+
+    <ul data-bind="foreach: tasks, visible: tasks().length > 0">
+        <li>
+            <input type="checkbox" data-bind="checked: isdone, event:{ change: $parent.SetPrepId }" />
+            <input data-bind="value: title, disable: isdone, event: { keydown: $parent.SetPrepId }" />
+            <a href="#" data-bind="event:{ keydown: $parent.SetPrepId, click: $parent.removeTask}">
+                Delete</a>
+        </li> 
+    </ul>
+
+    You have <b data-bind="text: incompleteTasks().length">&nbsp;</b> incomplete task(s)
+    <span data-bind="visible: incompleteTasks().length == 0"> - it's beer time!</span>
+    <br>
+    <span data-bind="visible: needToSend().length > 0">
+        You have the changes. <button data-bind="click: save">Save</button> it?
+    </span>
+    <script>
+
+        function Task(data) {
+            if (data.s_id) this.s_id = ko.observable(data.s_id);
+            this.title = ko.observable(data.title);
+            this.isdone = ko.observable(data.isdone);
+        }
+
+        function TaskListViewModel() {
+            // Data
+            var self = this;
+            self.tasks = ko.observableArray([]);
+            self.newTaskText = ko.observable();
+            self.needToSend = ko.observableArray([]);
+            
+            self.incompleteTasks = ko.computed(function() {
+                return ko.utils.arrayFilter(self.tasks(), 
+                                            function(task) { 
+                                                    return !task.isdone() && !task._destroy });
+            });
+
+            // Operations
+            self.addTask = function() {
+                let nt = new Task({ title: this.newTaskText() });
+                self.tasks.push(nt);
+                self.needToSend.push(nt);
+                self.newTaskText("");
+            };
+            self.removeTask = function(task) { 
+                self.SetPrepId(task);
+                self.tasks.destroy(task);
+            };
+
+            self.SetPrepId = function(target) {
+                if (target.s_id) {
+                    target.p_trid = ko.observable(target.s_id);
+                    self.needToSend.push(target);
+                    delete(target.s_id);
+                }
+                return true;
+            }
+            
+            self.Load = function() {
+                $.getJSON("tasks_samples", {}, function(allData) {
+                    var mappedTasks = $.map(allData, function(item) { return new Task(item) });
+                    self.tasks(mappedTasks);
+                });
+            };
+            self.Load();
+
+            self.save = function() {
+                console.log("Tasks   : "+ko.toJSON(self.tasks));
+                console.log("NeedSend: "+ko.toJSON(self.needToSend));
+                
+                $.ajax("tasks_samples", {
+                    data: ko.toJSON(self.needToSend),
+                    type: "put", contentType: "application/json",
+                    success: function(result) { self.Load() }
+                });
+                self.needToSend([]);
+            };
+        }
+
+        ko.applyBindings(new TaskListViewModel());
+    </script>
+</body>
+</html>
