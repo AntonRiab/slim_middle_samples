@@ -4,15 +4,15 @@ Table of Contents
 * [How to look at it](#how-to-look-at-it)
 * [Full stack demo](#full-stack-demo-application)
 * [Logic point enter of data](#logic-point-enter-of-data)
-    * [PUT for WRITE AND UPDATE](#PUT-for-WRITE-AND-UPDATE)
-    * [GET for READ](#GET-for-READ)
-    * [How to tests regexp filters](#How-to-tests-regexp-filters)
-    * [External calls](#External-calls)
+    * [PUT for WRITE AND UPDATE](#put-for-write-and-update)
+    * [GET for READ](#get-for-read)
+    * [How to tests regexp filters](#how-to-tests-regexp-filters)
+    * [External calls](#external-calls)
 * [How to adapteted your app](#how-to-adapteted-your-app)
-* [URL in demo samples](#URL-in-demo-samples)
-* [SQL files for your app](#SQL-files-for-your-app)
-* [Copyright and License](#Copyright-and-License)
-* [See also](#See-also)
+* [URL in demo samples](#url-in-demo-samples)
+* [SQL files for your app](#sql-files-for-your-app)
+* [Copyright and License](#copyright-and-License)
+* [See also](#see-also)
 
 About
 ====
